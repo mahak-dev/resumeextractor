@@ -1,35 +1,36 @@
+import pandas as pd
 from neo4j import GraphDatabase
-import os
-from pdfminer.high_level import extract_text # type: ignore
 
-# Neo4j connection details
-url = "bolt://localhost:7687"
-username = "neo4j"
-password = "fWuii2EL5YCvFowJZ75saoK4vC7ubwJgZOJXzi7C5Kg"
+# Neo4j AuraDB connection URI, username, and password
+uri = "bolt://localhost:7687"
+user = "neo4j"
+password = "mahak@123"
 
-driver = GraphDatabase.driver(url, auth=(username, password))
+# Function to create a Neo4j session
+def get_neo4j_session(uri, user, password):
+    driver = GraphDatabase.driver(uri, auth=(user, password))
+    return driver.session()
 
-# Function to process and insert data from a resume
-def process_resume(resume_file):
-    resume_text = extract_text(resume_file)
+# Function to load data from CSV and create nodes and relationships in Neo4j
+def load_csv_to_neo4j(session, csv_file):
+    # Load CSV data into a DataFrame
+    df = pd.read_csv(csv_file)
 
-    # Parse resume_text to extract candidate info, degrees, certifications, etc.
+    # Cypher query to create nodes and relationships
+    query = """
+    UNWIND $data as row
+    MERGE (n:Node {id: row.id})
+    ON CREATE SET n += row.properties
+    """
 
-    # Example query to insert data into Neo4j
-    with driver.session() as session:
-        session.run(
-            """
-            CREATE (c:Candidate {name: $name, degrees: $degrees, certifications: $certifications})
-            """,
-            {"name": "John Doe", "degrees": ["B.Sc. in Computer Science", "MBA"], "certifications": ["CompTIA A+ certified (2012)", "AWS Certified Solutions Architect"]}
-        )
+    # Run the query with parameters
+    session.run(query, data=df.to_dict('records'))
 
-# Directory containing resumes
-resumes_dir = "path/to/resumes/directory"
+csv_file_path = r"C:\Users\gupta\Downloads\gemini Resume application\resume_data.csv"
 
-# Process all resumes in the directory
-for resume_file in os.listdir(resumes_dir):
-    if resume_file.endswith(".pdf"):
-        process_resume(os.path.join(resumes_dir, resume_file))
+# Connect to Neo4j AuraDB
+with get_neo4j_session(uri, user, password) as session:
+    # Load CSV data to Neo4j
+    load_csv_to_neo4j(session, csv_file_path)
 
-print("Database population completed.")
+print("CSV data loaded into Neo4j AuraDB.")

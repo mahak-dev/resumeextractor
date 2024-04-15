@@ -33,30 +33,7 @@ def extract_candidate_name(resume_text):
 
     return "Name Not Found"
 
-def extract_technical_skills(resume_text):
-    skills_pattern = r"TECHNICAL SKILLS\n(.*?)(?=\n[A-Z]+\n|\Z)"
-    match = re.search(skills_pattern, resume_text, re.DOTALL)
-    return match.group(1).strip() if match else "Skills Not Found"
-
-def extract_education(resume_text):
-    education_pattern = r"EDUCATION\n(.*?)\n[A-Z]+\n"
-    match = re.search(education_pattern, resume_text, re.DOTALL)
-    return match.group(1).strip() if match else "Education Not Found"
-
-def extract_experience(resume_text):
-    experience_pattern = r"EXPERIENCE\n(.*?)(?=\n[A-Z]+\n|\Z)"
-    match = re.search(experience_pattern, resume_text, re.DOTALL)
-    return match.group(1).strip() if match else "Experience Not Found"
-
-def extract_personal_projects(resume_text):
-    projects_pattern = r"PERSONAL PROJECTS\n(.*?)(?=\n[A-Z]+\n|\Z)"
-    match = re.search(projects_pattern, resume_text, re.DOTALL)
-    return match.group(1).strip() if match else "Projects Not Found"
-
-def extract_achievements(resume_text):
-    achievements_pattern = r"ACHIEVEMENTS\n(.*?)(?=\n[A-Z]+\n|\Z)"
-    match = re.search(achievements_pattern, resume_text, re.DOTALL)
-    return match.group(1).strip() if match else "Achievements/Certificates Not Found"
+# Define other extraction functions
 
 def process_resume(resume_file, output_csv):
     resume_text = extract_text_from_pdf(resume_file)
@@ -69,7 +46,7 @@ def process_resume(resume_file, output_csv):
     personal_projects = extract_personal_projects(resume_text)
     achievements = extract_achievements(resume_text)
 
-    # Append extracted information to CSV file
+    # Write extracted information to CSV file
     with open(output_csv, mode='a', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow([candidate_name, technical_skills, education, experience, personal_projects, achievements])
@@ -81,12 +58,11 @@ output_csv = "resume_data.csv"
 # Write header to CSV file
 with open(output_csv, mode='w', newline='', encoding='utf-8') as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(["Candidate Name", "Technical Skills", "Education", "Experience", "Personal Projects", "Achievements/Certificates"])
+    writer.writerow(["Candidate Name", "Technical Skills", "Education", "Expirence", "Personal Projects", "Achievements/Certificates"])
 
 # Process all resumes in the directory
 for resume_file in os.listdir(resumes_dir):
     if resume_file.endswith(".pdf"):
-        resume_path = os.path.join(resumes_dir, resume_file)
-        process_resume(resume_path, output_csv)
+        process_resume(os.path.join(resumes_dir, resume_file), output_csv)
 
 print("Resume processing completed and CSV exported.")

@@ -5,11 +5,17 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGener
 from langchain.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
+from langchain_community.vectorstores import FAISS
 from dotenv import load_dotenv
 import os
+from neo4j import GraphDatabase, basic_auth
 
 load_dotenv()
-os.getenv("GOOGLE_API_KEY")
+
+# Neo4j credentials
+neo4j_uri = "neo4j+s://7a4ea47a.databases.neo4j.io"
+neo4j_user = os.getenv("neo4j")
+neo4j_password = os.getenv("ckSizYCrgNmbwhFAAwPNycQJ21pIb9lhQgK7bxTmjl8")
 
 def get_pdf_text(pdf_docs):
     text = ""
@@ -46,14 +52,20 @@ def get_conversational_chain():
     return chain
 
 def user_input(user_question):
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-    new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-    docs = new_db.similarity_search(user_question)
+    try:
+        driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+        with driver.session() as session:
+            neo4j_query = (
+                "MATCH (n:Document) WHERE n.content CONTAINS $question "
+                "RETURN n LIMIT 5"
+            )
+            result = session.run(neo4j_query, question=user_question)
+            docs = [record["n"] for record in result]
 
-    chain = get_conversational_chain()
-    
-    response = chain({"input_documents": docs, "question": user_question}, return_only_outputs=True)
-    return response["output_text"]
+        response_text = "\n".join(doc["content"] for doc in docs)
+        return response_text
+    except Exception as e:
+        return f"Error fetching data from Neo4j: {e}"
 
 def main():
     st.set_page_config("Chat Resume")
